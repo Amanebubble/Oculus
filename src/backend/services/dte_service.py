@@ -11,11 +11,15 @@ class DTEService:
         self.ocr = OCRService()
         self.target_codes = ["03", "05", "06", "14"]
 
-    def _leer_json(self, json_path: Path):
+    def _leer_json_estandarizado(self, json_path: Path):
+        """Lee el texto del JSON y lo estandariza vía IA para evitar errores estructurales."""
         try:
             with open(json_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
+                texto = f.read()
+            # Pasar por Groq para limpiar y estandarizar
+            return self.ocr.process_raw_json_text(texto)
+        except Exception as e:
+            print(f"Error estandarizando {json_path.name}: {e}")
             return None
 
     def _mover_archivos(self, source_paths: list, dest_folder: Path, subfolder_name: str = None):
@@ -71,7 +75,13 @@ class DTEService:
             for j in posibles_jsons:
                 if j.stem == pdf.stem:
                     json_asociado_path = j
-                    json_asociado_data = self._leer_json(j)
+                    json_asociado_data = self._leer_json_estandarizado(j)
+                    
+                    # Reescribir el archivo JSON con la versión purificada
+                    if json_asociado_data:
+                        with open(j, 'w', encoding='utf-8') as f:
+                            json.dump(json_asociado_data, f, indent=4)
+                            
                     jsons_usados.add(j)
                     pdf_emparejado = True
                     break
@@ -81,7 +91,12 @@ class DTEService:
                 # Ojo: Solo lo hacemos si es seguro (1 a 1). Si hay 2 PDFs y 2 JSONs revueltos, cae a OCR
                 j = posibles_jsons[0]
                 json_asociado_path = j
-                json_asociado_data = self._leer_json(j)
+                json_asociado_data = self._leer_json_estandarizado(j)
+                
+                if json_asociado_data:
+                    with open(j, 'w', encoding='utf-8') as f:
+                        json.dump(json_asociado_data, f, indent=4)
+                        
                 jsons_usados.add(j)
                 pdf_emparejado = True
                 print(f"[*] Emparejamiento heurístico: {pdf.name} <-> {j.name}")
@@ -132,9 +147,44 @@ class DTEService:
                 if tipo_dte in self.target_codes:
                     self._mover_archivos(archivos_a_mover, CARPETA_PROCESADOS, subfolder)
                     db.log_extraction(pdf.name, "VALID_DTE", dte_code=tipo_dte)
+                    resultados["procesados_json"] += 1 if json_asociado_path else 0
                 else:
                     self._mover_archivos(archivos_a_mover, CARPETA_OTROS_DTES, subfolder)
                     db.log_extraction(pdf.name, "OTHER_DTE", dte_code=tipo_dte)
+                    resultados["otros"] += 1
+
+        # Procesar JSONs huérfanos (que no vinieron con PDF)
+        jsons_huerfanos = [j for j in jsons if j not in jsons_usados]
+        for j in jsons_huerfanos:
+            print(f"[*] Estandarizando JSON huérfano: {j.name}")
+            json_asociado_data = self._leer_json_estandarizado(j)
+            
+            if json_asociado_data:
+                with open(j, 'w', encoding='utf-8') as f:
+                    json.dump(json_asociado_data, f, indent=4)
+                    
+                identificacion = json_asociado_data.get("identificacion", {})
+                tipo_dte = str(identificacion.get("tipoDte", "")).zfill(2)
+                if not tipo_dte or tipo_dte == "00":
+                    control = str(identificacion.get("numeroControl", "")).upper()
+                    for t in self.target_codes:
+                        if f"DTE-{t}" in control:
+                            tipo_dte = t
+                            break
+
+                fecha = identificacion.get("fecEmi", "2000-01-01")
+                mes_anio = fecha[:7]
+                cliente = json_asociado_data.get("receptor", {}).get("nombre", "Cliente_Desconocido")
+                cliente_folder = "".join(x for x in cliente if x.isalnum() or x in " -_").strip()
+                subfolder = f"{cliente_folder}/{mes_anio}"
+
+                if tipo_dte in self.target_codes:
+                    self._mover_archivos([j], CARPETA_PROCESADOS, subfolder)
+                    db.log_extraction(j.name, "VALID_DTE", dte_code=tipo_dte)
+                    resultados["procesados_json"] += 1
+                else:
+                    self._mover_archivos([j], CARPETA_OTROS_DTES, subfolder)
+                    db.log_extraction(j.name, "OTHER_DTE", dte_code=tipo_dte)
                     resultados["otros"] += 1
 
         return resultados
