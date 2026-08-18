@@ -54,8 +54,11 @@ class Orchestrator:
                             protocolo=protocolo
                         )
                         print(f"[Orquestador] Cuenta {email}: {resultados}")
+                        db.update_email_status(email, 1) # Marcar como activa/ok
                     except Exception as e:
-                        print(f"[Orquestador] Error descargando {email}: {e}")
+                        print(f"[Orquestador] Error de autenticación o conexión descargando {email}: {e}")
+                        db.update_email_status(email, 0) # Desactivar cuenta por error
+                        # Continuar con la siguiente cuenta sin detener el ciclo principal
                         
                     # Pausa Táctica para evitar saturación de red o del servidor IMAP/POP3
                     if self.running:

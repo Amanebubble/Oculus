@@ -98,7 +98,7 @@ class EmailService:
             mailbox.logout()
         except Exception as e:
             print(f"[!] Error IMAP en {cuenta}: {e}")
-            resultados["errores"] += 1
+            raise e
             
         return resultados
 
@@ -182,6 +182,6 @@ class EmailService:
                 
         except Exception as e:
             print(f"[!] Error POP3 en {cuenta}: {e}")
-            resultados["errores"] += 1
+            raise e
             
         return resultados

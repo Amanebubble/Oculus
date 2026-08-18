@@ -62,6 +62,12 @@ class DBManager:
                 return False, "La cuenta ya existe"
             except Exception as e:
                 return False, str(e)
+
+    def update_email_status(self, email, active: int):
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE email_accounts SET active = ? WHERE email = ?", (active, email))
+            conn.commit()
                 
     def log_extraction(self, filename, status, dte_code=None, error_msg=None):
         with self._get_connection() as conn:
