@@ -261,6 +261,8 @@ document.addEventListener("DOMContentLoaded", () => {
         let provider = document.getElementById("email-provider").value;
         if(provider === "custom") provider = document.getElementById("custom-imap-server").value;
         const pass = document.getElementById("email-password").value;
+        const portVal = document.getElementById("email-port") ? document.getElementById("email-port").value : "993";
+        const port = parseInt(portVal, 10) || 993;
 
         if(!email || !provider || !pass) {
             showToast("Complete los campos obligatorios.");
@@ -271,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnAddEmail.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
 
         try {
-            const res = await window.pywebview.api.add_email(client, email, pass, provider);
+            const res = await window.pywebview.api.add_email(client, email, pass, provider, port);
             showToast(res[1]);
             if(res[0]) {
                 document.getElementById("email-address").value = '';

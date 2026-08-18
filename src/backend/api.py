@@ -47,8 +47,8 @@ class Api:
     def get_emails(self):
         return db.get_all_emails()
 
-    def add_email(self, client, email, password_enc, server):
-        success, msg = db.add_email(email, password_enc, server, 993)
+    def add_email(self, client, email, password_enc, server, port=993):
+        success, msg = db.add_email(email, password_enc, server, port)
         return success, msg
         
     # --- MANUAL REVIEW ---
