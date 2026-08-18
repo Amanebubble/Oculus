@@ -255,8 +255,12 @@
                                 <input type="text" id="rev-uuid" class="premium-input" placeholder="Ingrese el UUID">
                             </div>
                             <div class="form-group">
+                                <label>Sello de Recepción</label>
+                                <input type="text" id="rev-sello" class="premium-input" placeholder="Ingrese el sello de recepción">
+                            </div>
+                            <div class="form-group">
                                 <label>Número de Control</label>
-                                <input type="text" id="rev-control" class="premium-input">
+                                <input type="text" id="rev-control" class="premium-input" placeholder="DTE-XX-XXXXXXXX-XXXXXXXXXXXXXXX">
                             </div>
                             <div class="form-group">
                                 <label>Fecha Emisión</label>
@@ -283,6 +287,30 @@
                             <div class="form-group">
                                 <label>NIT / NRC</label>
                                 <input type="text" id="rev-provider-nit" class="premium-input">
+                            </div>
+                        </div>
+                        
+                        <div class="form-section mt-4">
+                            <h4>Montos</h4>
+                            <div class="form-group">
+                                <label>Subtotal (Monto Base)</label>
+                                <input type="number" id="rev-subtotal" class="premium-input" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label>IVA (13% Auto)</label>
+                                <input type="text" id="rev-iva" class="premium-input" readonly placeholder="0.00" style="background: rgba(255,255,255,0.05);">
+                            </div>
+                            <div class="form-group">
+                                <label>Otros Impuestos</label>
+                                <div style="display:flex; gap:10px;">
+                                    <input type="number" id="rev-tax-input" class="premium-input" step="0.01" placeholder="Ej: 10.50">
+                                    <button class="btn btn-outline-teal" id="btn-add-tax" type="button"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                                <ul id="rev-tax-list" class="activity-list mt-2" style="max-height: 100px; overflow-y: auto;"></ul>
+                                <input type="hidden" id="rev-taxes-total" value="0">
+                            </div>
+                            <div class="form-group mt-3" style="text-align: right; font-size: 1.2rem;">
+                                <strong>Total: $<span id="rev-grand-total">0.00</span></strong>
                             </div>
                         </div>
                         

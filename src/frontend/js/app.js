@@ -332,12 +332,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Populate fields if any were extracted with low confidence
         document.getElementById("rev-uuid").value = doc.uuid || '';
+        document.getElementById("rev-sello").value = doc.sello || '';
         document.getElementById("rev-control").value = doc.control || '';
         document.getElementById("rev-date").value = doc.date || '';
         document.getElementById("rev-type").value = doc.type || '03';
         document.getElementById("rev-provider-name").value = doc.provider_name || '';
         document.getElementById("rev-provider-nit").value = doc.provider_nit || '';
+        
+        // Reset amounts
+        document.getElementById("rev-subtotal").value = '';
+        document.getElementById("rev-iva").value = '';
+        document.getElementById("rev-tax-input").value = '';
+        document.getElementById("rev-tax-list").innerHTML = '';
+        document.getElementById("rev-taxes-total").value = '0';
+        document.getElementById("rev-grand-total").textContent = '0.00';
     }
+
+    // --- Montos e Impuestos Dinámicos ---
+    const inputSubtotal = document.getElementById("rev-subtotal");
+    const inputIva = document.getElementById("rev-iva");
+    const inputTax = document.getElementById("rev-tax-input");
+    const btnAddTax = document.getElementById("btn-add-tax");
+    const taxList = document.getElementById("rev-tax-list");
+    const inputTaxesTotal = document.getElementById("rev-taxes-total");
+    const displayGrandTotal = document.getElementById("rev-grand-total");
+
+    function calculateTotals() {
+        let subtotal = parseFloat(inputSubtotal.value) || 0;
+        let iva = subtotal * 0.13;
+        let otherTaxes = parseFloat(inputTaxesTotal.value) || 0;
+        
+        inputIva.value = iva.toFixed(2);
+        let grandTotal = subtotal + iva + otherTaxes;
+        displayGrandTotal.textContent = grandTotal.toFixed(2);
+    }
+
+    inputSubtotal.addEventListener("input", calculateTotals);
+
+    function addTax() {
+        let taxVal = parseFloat(inputTax.value);
+        if(!isNaN(taxVal) && taxVal > 0) {
+            // Update total
+            let currentTotal = parseFloat(inputTaxesTotal.value) || 0;
+            currentTotal += taxVal;
+            inputTaxesTotal.value = currentTotal;
+            
+            // Add to UI list
+            const li = document.createElement("li");
+            li.className = "activity-item";
+            li.style.padding = "5px 10px";
+            li.innerHTML = `<span>Impuesto:</span> <strong>$${taxVal.toFixed(2)}</strong>`;
+            taxList.appendChild(li);
+            
+            // Reset input and recalc
+            inputTax.value = '';
+            calculateTotals();
+        }
+    }
+
+    btnAddTax.addEventListener("click", addTax);
+    inputTax.addEventListener("keypress", (e) => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            addTax();
+        }
+    });
 
     btnPrevReview.addEventListener("click", () => {
         if(currentReviewIndex > 0) {
@@ -356,12 +415,18 @@ document.addEventListener("DOMContentLoaded", () => {
     btnSaveReview.addEventListener("click", async () => {
         const data = {
             id: pendingReviews[currentReviewIndex].id,
+            pdf_path: pendingReviews[currentReviewIndex].pdf_path,
             uuid: document.getElementById("rev-uuid").value,
+            sello: document.getElementById("rev-sello").value,
             control: document.getElementById("rev-control").value,
             date: document.getElementById("rev-date").value,
             type: document.getElementById("rev-type").value,
             provider_name: document.getElementById("rev-provider-name").value,
-            provider_nit: document.getElementById("rev-provider-nit").value
+            provider_nit: document.getElementById("rev-provider-nit").value,
+            subtotal: parseFloat(document.getElementById("rev-subtotal").value) || 0,
+            iva: parseFloat(document.getElementById("rev-iva").value) || 0,
+            otros_impuestos: parseFloat(document.getElementById("rev-taxes-total").value) || 0,
+            total: parseFloat(document.getElementById("rev-grand-total").textContent) || 0
         };
 
         btnSaveReview.disabled = true;

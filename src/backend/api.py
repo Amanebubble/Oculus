@@ -1,20 +1,22 @@
 from src.backend.database.db_manager import db
 from src.backend.services.dte_service import DTEService
+from src.backend.services.orchestrator import Orchestrator
 from src.backend.utils.config import CARPETA_PROCESADOS
 
 class Api:
     def __init__(self):
         self.dte_service = DTEService()
+        self.orchestrator = Orchestrator()
     
     def get_stats(self):
         """Obtiene las estadísticas reales de la base de datos"""
         return db.get_stats()
 
     def start_processing(self):
-        """Inicia el pipeline de procesamiento real"""
+        """Inicia el pipeline de procesamiento real (ahora con el Orquestador)"""
         print("Iniciando procesamiento...")
-        res = self.dte_service.process_downloads()
-        return f"Finalizado: {res['procesados']} procesados, {res['otros']} archivados, {res['errores']} errores."
+        self.orchestrator.start()
+        return "Motor iniciado en segundo plano. Monitoreando cuentas..."
     
     def get_clients(self):
         if not CARPETA_PROCESADOS.exists(): return []
@@ -67,19 +69,64 @@ class Api:
         ]
 
     def save_manual_review(self, data):
-        import time
-        time.sleep(1) # Simular proceso de guardado y recatalogación
+        import json
+        from pathlib import Path
+        from src.backend.utils.config import CARPETA_DESCARGAS
+        
         print(f"Revisión guardada: {data}")
+        
+        uuid = data.get("uuid", "UNKNOWN-UUID")
+        
+        # Build standard JSON based on the parsed data
+        standard_json = {
+            "identificacion": {
+                "codigoGeneracion": uuid,
+                "numeroControl": data.get("control", ""),
+                "fecEmi": data.get("date", ""),
+                "tipoDte": data.get("type", "03"),
+            },
+            "emisor": {
+                "nombre": "Proveedor Desconocido" # En compra, el emisor es el proveedor
+            },
+            "receptor": {
+                "nombre": data.get("provider_name", "Cliente_Manual")
+            },
+            "documentoRelacionado": [],
+            "resumen": {
+                "totalGravada": data.get("subtotal", 0),
+                "subTotal": data.get("subtotal", 0),
+                "tributos": [
+                    {"codigo": "20", "descripcion": "Impuesto al Valor Agregado 13%", "valor": data.get("iva", 0)}
+                ],
+                "montoTotalOperacion": data.get("total", 0),
+                "totalPagar": data.get("total", 0)
+            },
+            "selloRecepcion": {
+                "selloRecepcion": data.get("sello", "")
+            },
+            "otros_impuestos_manuales": data.get("otros_impuestos", 0) # Campo custom para exportación
+        }
+        
+        json_path = CARPETA_DESCARGAS / f"manual_{uuid}.json"
+        
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(standard_json, f, indent=4)
+            
         return True
 
     # --- GLOBAL CONTROLS ---
     def restart_service(self):
         print("Reiniciando motor...")
+        self.orchestrator.stop()
+        import time
+        time.sleep(2)
+        self.orchestrator.start()
         return True
         
     def shutdown_service(self):
         import webview
         print("Apagando aplicación...")
+        self.orchestrator.stop()
         if webview.windows:
             webview.windows[0].destroy()
         return True

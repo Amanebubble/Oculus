@@ -2,25 +2,26 @@ import os
 import sys
 from pathlib import Path
 
-def get_base_dir() -> Path:
+def get_data_dir() -> Path:
     """
-    Retorna la ruta base absoluta del proyecto, resolviendo si se está 
-    ejecutando como un ejecutable compilado por PyInstaller o como script normal.
+    Retorna la ruta donde se guardará la base de datos y los PDFs.
+    Si estamos en producción (.exe), usa Documentos para evitar pérdida de datos.
+    Si estamos desarrollando, usa la carpeta local.
     """
     if getattr(sys, 'frozen', False):
-        # Si se ejecuta como .exe empaquetado (PyInstaller)
-        return Path(sys.executable).parent
+        # Producción: C:\Users\Usuario\Documents\Oculus_Workspace
+        return Path.home() / "Documents" / "Oculus_Workspace"
     else:
-        # Si se ejecuta como script Python (.py)
-        return Path(__file__).resolve().parent.parent.parent.parent
+        # Desarrollo: Carpeta del proyecto
+        return Path(__file__).resolve().parent.parent.parent.parent / "data"
 
-BASE_DIR = get_base_dir()
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 SRC_DIR = BASE_DIR / "src"
 FRONTEND_DIR = SRC_DIR / "frontend"
 BACKEND_DIR = SRC_DIR / "backend"
 
-# Carpetas de datos
-DATA_DIR = BASE_DIR / "data"
+# Carpetas de datos (Aisladas del código fuente)
+DATA_DIR = get_data_dir()
 CARPETA_DESCARGAS = DATA_DIR / "01_Descargas"
 CARPETA_PROCESADOS = DATA_DIR / "02_Procesados"
 CARPETA_OTROS_DTES = DATA_DIR / "03_Otros_DTEs"

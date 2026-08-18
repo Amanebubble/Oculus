@@ -44,7 +44,7 @@ class DBManager:
     def get_all_emails(self):
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, email, server, port, active, last_sync FROM email_accounts")
+            cursor.execute("SELECT id, email, password_encrypted, server, port, active, last_sync FROM email_accounts")
             columns = [column[0] for column in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 

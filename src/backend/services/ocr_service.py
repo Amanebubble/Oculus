@@ -1,48 +1,107 @@
 import os
 import json
-import google.generativeai as genai
+import fitz  # PyMuPDF
+from groq import Groq
 from pathlib import Path
 
 class OCRService:
     def __init__(self):
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        # En el futuro, estas llaves se leerán desde la BD o el archivo de configuración local
         self.groq_api_key = os.getenv("GROQ_API_KEY", "")
-        self.llamaparse_api_key = os.getenv("LLAMA_CLOUD_API_KEY", "")
-        
-        if self.gemini_api_key:
-            genai.configure(api_key=self.gemini_api_key)
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-pro')
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        self.groq_client = Groq(api_key=self.groq_api_key) if self.groq_api_key else None
 
-    def extract_text_llamaparse(self, pdf_path: str) -> str:
-        """Usa LlamaParse para obtener texto y tablas del PDF con precisión"""
-        # Aquí iría la integración real con llama-parse
-        # parser = LlamaParse(api_key=self.llamaparse_api_key, result_type="markdown")
-        # return parser.load_data(pdf_path)[0].text
-        return f"[Texto extraído simulado de {Path(pdf_path).name}]"
+    def _extract_local_text(self, pdf_path: str) -> str:
+        """Extrae el texto del PDF localmente usando PyMuPDF (Costo $0)"""
+        try:
+            doc = fitz.open(pdf_path)
+            texto = ""
+            for page in doc:
+                texto += page.get_text() + "\n"
+            return texto.strip()
+        except Exception as e:
+            print(f"Error extrayendo texto de {pdf_path}: {e}")
+            return ""
 
     def process_pdf_to_raw_json(self, pdf_path: str) -> dict:
         """
-        Tubería principal: LlamaParse -> Gemini/Groq -> JSON Crudo
+        Tubería principal: PyMuPDF -> Groq (Llama 3.1 8B) -> JSON Crudo
         """
-        print(f"[*] Iniciando OCR Híbrido para: {pdf_path}")
+        print(f"[*] Iniciando Extracción Híbrida (PyMuPDF + Groq) para: {pdf_path}")
         
-        # 1. Extraer texto base
-        texto_crudo = self.extract_text_llamaparse(pdf_path)
+        # 1. Extracción gratuita
+        texto_crudo = self._extract_local_text(pdf_path)
         
-        # 2. Estructurar con LLM (Gemini o Groq)
+        if not texto_crudo or len(texto_crudo) < 50:
+            print("[!] PDF escaneado detectado. Aquí entraría Gemini 3.6 Flash / LlamaParse.")
+            return {"error": "documento_escaneado", "requires_vision": True}
+        
+        # 2. Estructuración con Groq (Si hay llave configurada)
+        if not self.groq_client:
+            print("[!] No hay API Key de Groq. Simulando respuesta.")
+            return self._mock_response(pdf_path)
+            
         prompt = f"""
-        Extrae la información de este DTE y devuélvela estrictamente en formato JSON válido.
-        Asegúrate de buscar el código de generación y el tipo de DTE.
+        Eres un asistente experto en contabilidad. Extrae la siguiente información del texto de este Documento Tributario Electrónico (DTE).
+        Debes responder ÚNICAMENTE con un JSON válido. No incluyas explicaciones, ni bloques markdown como ```json.
+        
+        Estructura requerida:
+        {{
+            "identificacion": {{
+                "codigoGeneracion": "UUID de 36 caracteres",
+                "tipoDte": "03, 05, 06 o 14",
+                "numeroControl": "DTE-...",
+                "fecEmi": "YYYY-MM-DD"
+            }},
+            "emisor": {{
+                "nombre": "Nombre de la empresa",
+                "nit": "NIT de la empresa",
+                "nrc": "NRC"
+            }},
+            "resumen": {{
+                "totalPagar": 0.00,
+                "totalCompra": 0.00,
+                "iva": 0.00,
+                "ivaPerci1": 0.00,
+                "ivaRete1": 0.00
+            }},
+            "selloRecibido": "Cadena alfanumérica del sello"
+        }}
         
         Texto DTE:
         {texto_crudo}
         """
         
-        # Simulación de respuesta de Gemini 100% precisa
-        # En producción: response = self.gemini_model.generate_content(prompt)
-        # json_data = json.loads(response.text)
+        try:
+            response = self.groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama-3.1-8b-instant",
+                temperature=0.1,
+                max_tokens=1024,
+            )
+            content = response.choices[0].message.content.strip()
+            
+            # Limpiar posible markdown residual
+            if content.startswith("```json"):
+                content = content[7:-3]
+            elif content.startswith("```"):
+                content = content[3:-3]
+                
+            json_data = json.loads(content)
+            return json_data
+            
+        except Exception as e:
+            print(f"[!] Error procesando con Groq: {e}")
+            return {"error": "fallo_ia", "mensaje": str(e)}
+
+    def parse_raw_to_standard(self, raw_json: dict) -> dict:
+        """Transforma el JSON crudo en el formato estándar del sistema"""
+        estandar_json = raw_json.copy()
+        estandar_json["_metadata"] = {"fuente": "GROQ_LLAMA3.1", "estandarizado": True}
+        return estandar_json
         
-        raw_json = {
+    def _mock_response(self, pdf_path: str) -> dict:
+        return {
             "identificacion": {
                 "tipoDte": "03", 
                 "codigoGeneracion": f"GEN-FROM-OCR-{Path(pdf_path).stem}"
@@ -51,11 +110,3 @@ class OCRService:
             "receptor": {"nombre": "Cliente Empresa SA", "nit": "1111-111111-111-1"},
             "resumen": {"totalPagar": 150.00}
         }
-        return raw_json
-
-    def parse_raw_to_standard(self, raw_json: dict) -> dict:
-        """Transforma el JSON crudo en el formato estándar del sistema"""
-        # Aquí se aplicaría la lógica de mapeo para uniformar llaves
-        estandar_json = raw_json.copy()
-        estandar_json["_metadata"] = {"fuente": "OCR_GEMINI", "estandarizado": True}
-        return estandar_json
