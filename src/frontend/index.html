@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oculus DTE Manager</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="logo-container">
+                <div class="logo-icon"><i class="fa-solid fa-eye"></i></div>
+                <h1 class="logo-text">Oculus</h1>
+                <span class="version-tag" id="app-version">v2.0</span>
+            </div>
+            <nav class="main-nav">
+                <a href="#" class="nav-item" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="emails">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Cuentas de Correo</span>
+                </a>
+                <a href="#" class="nav-item" data-view="review">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span>Revisión Manual</span>
+                </a>
+                <a href="#" class="nav-item" data-view="dtes">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>Gestión de DTEs</span>
+                </a>
+                <a href="#" class="nav-item" data-view="explorer">
+                    <i class="fa-solid fa-folder-tree"></i>
+                    <span>Otros Documentos</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configuración</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Oculus Engine &copy; 2026</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h2 id="view-title">Dashboard</h2>
+                    <p class="subtitle">Monitoreo y extracción de documentos</p>
+                </div>
+            </header>
+
+            <!-- Vista: Dashboard -->
+            <div class="view-container active" id="view-dashboard">
+                <div class="widget glass-panel">
+                    <div class="widget-header">
+                        <h3><i class="fa-solid fa-server"></i> Controles del Motor</h3>
+                    </div>
+                    <div class="widget-body" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <button class="btn btn-teal" id="btn-process" style="flex: 1;">
+                            <i class="fa-solid fa-play"></i> Iniciar Monitoreo
+                        </button>
+                        <button class="btn btn-warning" id="btn-restart" style="flex: 1;">
+                            <i class="fa-solid fa-rotate-right"></i> Reiniciar Servicio
+                        </button>
+                        <button class="btn btn-danger" id="btn-shutdown" style="flex: 1;">
+                            <i class="fa-solid fa-power-off"></i> Apagar App
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon bg-success">
+                            <i class="fa-solid fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>DTEs Válidos</h3>
+                            <p class="stat-value" id="stat-processed">--</p>
+                            <span class="stat-desc">Códigos 03,05,06,14</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon bg-warning">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>En Cola</h3>
+                            <p class="stat-value" id="stat-pending">--</p>
+                            <span class="stat-desc">Pendientes de lectura</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon bg-info">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Otros DTEs</h3>
+                            <p class="stat-value" id="stat-others">--</p>
+                            <span class="stat-desc">Archivados</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon bg-danger">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Requiere Revisión</h3>
+                            <p class="stat-value" id="stat-errors">--</p>
+                            <span class="stat-desc">Fallos de lectura OCR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-widgets">
+                    <div class="widget glass-panel widget-large">
+                        <div class="widget-header">
+                            <h3>Actividad Reciente</h3>
+                        </div>
+                        <div class="widget-body">
+                            <ul class="activity-list" id="activity-log">
+                                <li class="activity-item empty-state">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <p>Esperando iniciar procesamiento...</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista: Gestión de DTEs (Libro de Compras) -->
+            <div class="view-container" id="view-dtes">
+                <div class="widget glass-panel widget-large">
+                    <div class="widget-header">
+                        <h3>Generador de Libro de Compras</h3>
+                    </div>
+                    <div class="widget-body dte-generator-form">
+                        <div class="form-group">
+                            <label>Seleccionar Cliente</label>
+                            <select id="sel-client" class="premium-input">
+                                <option value="">-- Seleccione un cliente --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Seleccionar Período (Año - Mes)</label>
+                            <select id="sel-month" class="premium-input" disabled>
+                                <option value="">-- Seleccione un cliente primero --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ruta de Guardado</label>
+                            <input type="text" id="input-path" class="premium-input" placeholder="C:/Mis Documentos/Libros..." readonly>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" id="btn-generate-excel" disabled>
+                                <i class="fa-solid fa-file-excel"></i> Generar Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Vista: Gestión de Cuentas de Correo -->
+            <div class="view-container split-view" id="view-emails">
+                <div class="widget glass-panel split-left">
+                    <div class="widget-header">
+                        <h3><i class="fa-solid fa-circle-plus teal-text"></i> Agregar Nueva Cuenta</h3>
+                    </div>
+                    <div class="widget-body">
+                        <div class="form-group">
+                            <label>Nombre de Empresa / Cliente</label>
+                            <input type="text" id="email-client-name" class="premium-input" placeholder="Ej. Transporte Ejecutivo Shalom">
+                        </div>
+                        <div class="form-group">
+                            <label>Correo Electrónico a Monitorear</label>
+                            <input type="email" id="email-address" class="premium-input" placeholder="facturacion@empresa.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Proveedor IMAP</label>
+                            <select id="email-provider" class="premium-input">
+                                <option value="imap.gmail.com">Gmail (imap.gmail.com)</option>
+                                <option value="outlook.office365.com">Outlook / Office365</option>
+                                <option value="custom">Otro (Personalizado)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="custom-imap-group" style="display:none;">
+                            <label>Servidor IMAP Custom</label>
+                            <input type="text" id="custom-imap-server" class="premium-input" placeholder="imap.tudominio.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña de Aplicación</label>
+                            <input type="password" id="email-password" class="premium-input" placeholder="xxxx-xxxx-xxxx-xxxx">
+                            <small class="form-hint"><i class="fa-solid fa-shield"></i> Se almacena cifrada localmente.</small>
+                        </div>
+                        <button class="btn btn-teal full-width mt-4" id="btn-add-email">
+                            <i class="fa-solid fa-user-plus"></i> Registrar Cuenta
+                        </button>
+                    </div>
+                </div>
+                <div class="widget glass-panel split-right">
+                    <div class="widget-header space-between">
+                        <h3><i class="fa-solid fa-list-check"></i> Cuentas Activas</h3>
+                        <button class="icon-btn" id="btn-refresh-emails" title="Refrescar Lista"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                    <div class="widget-body" id="emails-list-container">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-inbox"></i>
+                            <p>No hay cuentas configuradas.</p>
+                            <small>Usa el formulario de la izquierda para agregar la primera.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista: Revisión Manual -->
+            <div class="view-container split-view-large" id="view-review">
+                <div class="widget glass-panel split-left-large">
+                    <div class="widget-header">
+                        <h3><i class="fa-solid fa-file-pdf"></i> Visor de Documento</h3>
+                    </div>
+                    <div class="widget-body pdf-container" id="pdf-viewer-container">
+                        <div class="empty-state" id="review-empty-state">
+                            <i class="fa-solid fa-check-double teal-text" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                            <p style="font-size: 1.2rem;">Todo limpio.</p>
+                            <small>No hay casos pendientes de revisión manual.</small>
+                        </div>
+                        <embed id="pdf-embed" src="" type="application/pdf" width="100%" height="100%" style="display:none; border-radius: 8px;">
+                    </div>
+                </div>
+                <div class="widget glass-panel split-right-small">
+                    <div class="widget-header space-between">
+                        <h3>Completar Datos</h3>
+                        <div class="pagination-controls">
+                            <button class="icon-btn" id="btn-prev-review" disabled><i class="fa-solid fa-chevron-left"></i></button>
+                            <span id="review-counter" class="badge badge-teal">0 / 0</span>
+                            <button class="icon-btn" id="btn-next-review" disabled><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="widget-body review-form">
+                        <p class="form-hint mb-4">Revisa el PDF y completa los campos faltantes o con baja confianza.</p>
+                        
+                        <div class="form-section">
+                            <h4>Metadatos e Identificadores</h4>
+                            <div class="form-group">
+                                <label>Código de Generación (UUID)</label>
+                                <input type="text" id="rev-uuid" class="premium-input" placeholder="Ingrese el UUID">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Control</label>
+                                <input type="text" id="rev-control" class="premium-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Emisión</label>
+                                <input type="date" id="rev-date" class="premium-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo DTE</label>
+                                <select id="rev-type" class="premium-input">
+                                    <option value="03">03 - Comprobante de Crédito Fiscal</option>
+                                    <option value="05">05 - Nota de Crédito</option>
+                                    <option value="06">06 - Nota de Débito</option>
+                                    <option value="14">14 - Sujeto Excluido</option>
+                                    <option value="other">Otro DTE (Ignorar)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section mt-4">
+                            <h4>Datos del Proveedor</h4>
+                            <div class="form-group">
+                                <label>Nombre o Razón Social</label>
+                                <input type="text" id="rev-provider-name" class="premium-input">
+                            </div>
+                            <div class="form-group">
+                                <label>NIT / NRC</label>
+                                <input type="text" id="rev-provider-nit" class="premium-input">
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-teal full-width mt-4" id="btn-save-review" disabled>
+                            <i class="fa-solid fa-save"></i> Guardar y Procesar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Vista: Explorador de Otros Documentos -->
+            <div class="view-container split-view-large" id="view-explorer">
+                <div class="widget glass-panel split-left-large">
+                    <div class="widget-header space-between">
+                        <h3><i class="fa-solid fa-folder-tree teal-text"></i> Otros Documentos</h3>
+                        <div style="display:flex; gap:10px;">
+                            <input type="date" id="exp-filter-date" class="premium-input" style="width:150px; padding: 6px;">
+                            <input type="text" id="exp-filter-client" class="premium-input" placeholder="Filtrar cliente..." style="width:200px; padding: 6px;">
+                            <button class="icon-btn" id="btn-refresh-explorer"><i class="fa-solid fa-rotate"></i></button>
+                        </div>
+                    </div>
+                    <div class="widget-body" style="padding:0; overflow-y:auto; max-height:calc(100vh - 150px);">
+                        <ul class="activity-list" id="explorer-list" style="padding: 16px;">
+                            <li class="activity-item empty-state">
+                                <p>Cargando documentos...</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="widget glass-panel split-right-small">
+                    <div class="widget-header">
+                        <h3>Vista Previa</h3>
+                    </div>
+                    <div class="widget-body pdf-container" id="explorer-preview-container">
+                        <div class="empty-state" id="explorer-empty-state">
+                            <i class="fa-solid fa-eye teal-text" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                            <p>Selecciona un documento para verlo aquí</p>
+                        </div>
+                        <embed id="explorer-embed" src="" type="application/pdf" width="100%" height="100%" style="display:none; border-radius: 8px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista: Configuración API Keys -->
+            <div class="view-container" id="view-settings">
+                <div class="widget glass-panel widget-large" style="max-width: 600px; margin: 0 auto;">
+                    <div class="widget-header">
+                        <h3><i class="fa-solid fa-key teal-text"></i> Configuración de Motor IA</h3>
+                        <p class="subtitle mt-2">Guarda tus llaves de API localmente. Nunca se envían a terceros excepto al proveedor correspondiente.</p>
+                    </div>
+                    <div class="widget-body mt-4">
+                        <div class="form-section">
+                            <h4>Google Gemini (Requerido)</h4>
+                            <div class="form-group">
+                                <label>Gemini API Key</label>
+                                <input type="password" id="api-gemini" class="premium-input" placeholder="AIzaSy...">
+                                <small class="form-hint">Para validaciones avanzadas y precisión 100%.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section mt-4">
+                            <h4>LlamaParse (Requerido)</h4>
+                            <div class="form-group">
+                                <label>Llama Cloud API Key</label>
+                                <input type="password" id="api-llama" class="premium-input" placeholder="llx-...">
+                                <small class="form-hint">Para extraer tablas y texto complejo de PDFs.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section mt-4">
+                            <h4>Groq (Opcional - Procesamiento rápido)</h4>
+                            <div class="form-group">
+                                <label>Groq API Key</label>
+                                <input type="password" id="api-groq" class="premium-input" placeholder="gsk_...">
+                                <small class="form-hint">Acelerador de JSON si no se requiere Gemini.</small>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-teal full-width mt-4" id="btn-save-apis">
+                            <i class="fa-solid fa-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-icon"><i class="fa-solid fa-info-circle"></i></div>
+        <div class="toast-message" id="toast-msg">Mensaje de prueba</div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

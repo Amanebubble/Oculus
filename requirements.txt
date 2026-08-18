@@ -1,0 +1,17 @@
+pywebview
+Flask
+pdfplumber
+markitdown
+groq
+python-dotenv
+pandas
+openpyxl
+imap-tools
+PyMuPDF
+rapidocr-onnxruntime
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+requests
+google-generativeai
+llama-parse
