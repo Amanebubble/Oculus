@@ -35,8 +35,8 @@ def main():
     )
     
     # Iniciar la aplicación
-    # debug=True permite abrir las herramientas de desarrollador haciendo click derecho -> Inspeccionar
-    webview.start(debug=True)
+    # debug=False evita que se abra la consola web de inspección
+    webview.start(debug=False)
 
 if __name__ == '__main__':
     main()

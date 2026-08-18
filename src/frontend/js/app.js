@@ -512,10 +512,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSaveApis = document.getElementById("btn-save-apis");
     if(btnSaveApis) {
         btnSaveApis.addEventListener("click", async () => {
+            const groqEl = document.getElementById("api-groq");
             const data = {
-                gemini: document.getElementById("api-gemini").value,
-                llama: document.getElementById("api-llama").value,
-                groq: document.getElementById("api-groq").value
+                groq: groqEl ? groqEl.value : ""
             };
             try {
                 if(window.pywebview && window.pywebview.api) {
@@ -532,9 +531,8 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             if(window.pywebview && window.pywebview.api) {
                 const config = await window.pywebview.api.get_settings();
-                if(config.gemini) document.getElementById("api-gemini").value = config.gemini;
-                if(config.llama) document.getElementById("api-llama").value = config.llama;
-                if(config.groq) document.getElementById("api-groq").value = config.groq;
+                const groqEl = document.getElementById("api-groq");
+                if(config.groq && groqEl) groqEl.value = config.groq;
             }
         } catch (e) {
             console.error(e);
