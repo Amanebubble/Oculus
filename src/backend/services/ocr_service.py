@@ -6,10 +6,22 @@ from pathlib import Path
 
 class OCRService:
     def __init__(self):
-        # En el futuro, estas llaves se leerán desde la BD o el archivo de configuración local
-        self.groq_api_key = os.getenv("GROQ_API_KEY", "")
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+        # 1. Intentar cargar desde el settings.json local
+        self.groq_api_key = self._load_api_key("groq") or os.getenv("GROQ_API_KEY", "")
+        self.gemini_api_key = self._load_api_key("gemini") or os.getenv("GEMINI_API_KEY", "")
         self.groq_client = Groq(api_key=self.groq_api_key) if self.groq_api_key else None
+
+    def _load_api_key(self, key_name: str) -> str:
+        from src.backend.utils.config import DATA_DIR
+        settings_file = DATA_DIR / "settings.json"
+        if settings_file.exists():
+            try:
+                with open(settings_file, "r", encoding="utf-8") as f:
+                    settings = json.load(f)
+                    return settings.get(key_name, "")
+            except Exception:
+                pass
+        return ""
 
     def _extract_local_text(self, pdf_path: str) -> str:
         """Extrae el texto del PDF localmente usando PyMuPDF (Costo $0)"""

@@ -136,12 +136,25 @@ class Api:
 
     # --- SETTINGS ---
     def save_settings(self, data):
-        # Here we would save to sqlite or .env, for now just print
+        import json
+        from src.backend.utils.config import DATA_DIR
+        settings_file = DATA_DIR / "settings.json"
+        with open(settings_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
         print(f"Configuración de API guardada: {data}")
         return True
         
     def get_settings(self):
-        # Return masked or empty values
+        import json
+        from src.backend.utils.config import DATA_DIR
+        settings_file = DATA_DIR / "settings.json"
+        if settings_file.exists():
+            try:
+                with open(settings_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+                
         return {
             "gemini": "",
             "llama": "",

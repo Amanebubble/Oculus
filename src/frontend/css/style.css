@@ -296,6 +296,7 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .widget-header {
@@ -378,6 +379,7 @@ body {
     max-width: 400px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 .split-right {
     flex: 2;
